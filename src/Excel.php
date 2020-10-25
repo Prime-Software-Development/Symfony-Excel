@@ -34,6 +34,7 @@ class Excel {
 	public function getAuthor() {
 		return $this->author;
 	}
+
 	public function setAuthor( $author ) {
 		$this->author = $author;
 		return $this;
@@ -42,6 +43,7 @@ class Excel {
 	public function getCompany() {
 		return $this->company;
 	}
+
 	public function setCompany( $company ) {
 		$this->company = $company;
 		return $this;
@@ -50,6 +52,7 @@ class Excel {
 	public function getDescription() {
 		return $this->description;
 	}
+
 	public function setDescription( $description ) {
 		$this->description = $description;
 		return $this;
@@ -58,10 +61,12 @@ class Excel {
 	public function getTitle() {
 		return $this->title;
 	}
+
 	public function setTital( $title ) {
 		$this->title = $title;
 		return $this;
 	}
+
 	#endregion
 
 	public function loadFromHTML( $html ) {
@@ -107,13 +112,13 @@ class Excel {
 	private function _process_header( $table_index, \DOMNode $thead ) {
 
 		$num_data_columns = 0;
-		$header_rows = [ ];
+		$header_rows = [];
 
 		foreach ( $thead->getElementsByTagName( 'tr' ) as $row_index => $tr ) {
 
 			// Create an empty row of cells for this header row
 			if ( !isset( $header_rows[ $row_index ] ) ) {
-				$header_rows[ $row_index ] = [ ];
+				$header_rows[ $row_index ] = [];
 			}
 
 			$current_col = 0;
@@ -124,10 +129,12 @@ class Excel {
 				$num_rows = $th->getAttribute( 'rowspan' );
 				$text = $th->textContent;
 
-				if ( empty( $num_cols ) )
+				if ( empty( $num_cols ) ) {
 					$num_cols = 1;
-				if ( empty( $num_rows ) )
+				}
+				if ( empty( $num_rows ) ) {
 					$num_rows = 1;
+				}
 
 				while ( $row_index > 0 && isset( $header_rows[ $row_index ][ $current_col ] ) && $header_rows[ $row_index ][ $current_col ] == "Span" ) {
 					$current_col++;
@@ -138,7 +145,8 @@ class Excel {
 						for ( $j = $current_col; $j < ( $current_col + $num_cols ); $j++ ) {
 							$header_rows[ $i ][ $j ] = "Span";
 						}
-					} else {
+					}
+					else {
 						$header_rows[ $i ][ $current_col ] = "Span";
 					}
 				}
@@ -167,7 +175,7 @@ class Excel {
 	 */
 	private function _process_body( $table_index, \DOMNode $tbody ) {
 
-		$xl = [ ];
+		$xl = [];
 
 		foreach ( $tbody->getElementsByTagName( 'tr' ) as $row_index => $tr ) {
 			$this->sheet[ $table_index ]->add_row_format( $row_index, $tr );
@@ -240,16 +248,18 @@ class Excel {
 		$current_sheet_index = 0;
 		foreach ( $this->sheet as $thisSheet ) {
 			//Add new sheet
-			if ( $current_sheet_index > 0 )
+			if ( $current_sheet_index > 0 ) {
 				$objPHPExcel->createSheet();
+			}
 
 			$objPHPExcel->setActiveSheetIndex( $current_sheet_index );
 			$active_sheet = $objPHPExcel->getActiveSheet();
 
 			$endColumnLetter = $thisSheet->get_end_column_letter();
 
-			if ( $thisSheet->getTitle() == "" )
+			if ( $thisSheet->getTitle() == "" ) {
 				$thisSheet->setTitle( $this->title );
+			}
 
 			//Add head rows
 			// Merge the cells
@@ -281,8 +291,9 @@ class Excel {
 				$column_index = 0;
 				foreach ( $header_row as $header_cell ) {
 
-					if ( $header_cell == "Span" )
+					if ( $header_cell == "Span" ) {
 						continue;
+					}
 
 					$columnLetter = ExcelSheet::get_letter_from_number( $header_cell->start_col );
 
@@ -294,7 +305,7 @@ class Excel {
 						$merge_cells = $columnLetter . $current_row_num . ":" . ExcelSheet::get_letter_from_number( $header_cell->start_col + $header_cell->col_span - 1 ) . ( $current_row_num + $header_cell->row_span - 1 );
 						// Set the spanning
 						$active_sheet->mergeCells( $merge_cells );
-						$active_sheet->getStyle( $merge_cells )->getAlignment()->setHorizontal(  Alignment::HORIZONTAL_CENTER );
+						$active_sheet->getStyle( $merge_cells )->getAlignment()->setHorizontal( Alignment::HORIZONTAL_CENTER );
 					}
 
 					$column_index += $header_cell->col_span;
@@ -324,7 +335,7 @@ class Excel {
 			$active_sheet->SetCellValue( "A" . ( $rowNumber + 2 ), "Created " . date( 'd/m/Y H:i' ) );
 
 			// Name sheet
-			$active_sheet->setTitle( ( $thisSheet->tabTitle == null ? $thisSheet->getTitle() : $thisSheet->tabTitle ) );
+			$active_sheet->setTitle( $thisSheet->getTitle() );
 
 			//Set sheet priting properties
 			$active_sheet->getHeaderFooter()->setOddHeader( '&L&B' . $thisSheet->getTitle() . '&RPrinted on &D' );
@@ -369,40 +380,13 @@ class Excel {
 		$columnLetter = ExcelSheet::get_letter_from_number( $column_index );
 
 		// If we have some data
-		if ( !empty( $thisSheet->data ) ) {
+		if ( !empty( $thisSheet->getData() ) ) {
 			// Iterate over the data
-			foreach ( $thisSheet->data as $key => $dataObject ) {
+			foreach ( $thisSheet->getData() as $key => $dataObject ) {
 				$thisSheet->set_row_format( $active_excel_sheet, $rowNumber, $key );
 
-				// If a specific format has been requested
-				if ( !empty( $dataObject[ $columnDataKey ] ) && $thisSheet->formatMap != null && isset( $thisSheet->formatMap[ $column_index ] ) ) {
-					switch ( $thisSheet->formatMap[ $column_index ] ) {
-						case 'Date':
-							// Add 3600 to make sure the date is still today - covers BST
-							$timestamp = strtotime( $dataObject[ $columnDataKey ] ) + 3600;
-							if ( $timestamp % ( 24 * 3600 ) == 3600 )
-								$timestamp = $timestamp - 3600;
-							$active_excel_sheet->SetCellValue( $columnLetter . $rowNumber, \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel( $timestamp ) );
-							$active_excel_sheet->getStyle( $columnLetter . $rowNumber )->getNumberFormat()->setFormatCode( 'd mmm yyyy' );
-							break;
-						case 'Time':
-							//Enter data for this row
-							$active_excel_sheet->SetCellValue( $columnLetter . $rowNumber, $this->time_to_excel( $dataObject[ $columnDataKey ] ) );
-							$active_excel_sheet->getStyle( $columnLetter . $rowNumber )->getNumberFormat()->setFormatCode( NumberFormat::FORMAT_DATE_TIME3 );
-							break;
-						case 'Text':
-							$active_excel_sheet->SetCellValueExplicit( $columnLetter . $rowNumber, $dataObject[ $columnDataKey ], DataType::TYPE_STRING );
-							break;
-						default:
-							//Enter data for this row
-							$active_excel_sheet->SetCellValue( $columnLetter . $rowNumber, $dataObject[ $columnDataKey ] );
-							break;
-					}
-				}
-				else {
-					//Enter data for this row
-					$active_excel_sheet->SetCellValue( $columnLetter . $rowNumber, isset( $dataObject[ $columnDataKey ] ) ? $dataObject[ $columnDataKey ] : "" );
-				}
+				//Enter data for this row
+				$active_excel_sheet->SetCellValue( $columnLetter . $rowNumber, isset( $dataObject[ $columnDataKey ] ) ? $dataObject[ $columnDataKey ] : "" );
 
 				$thisSheet->set_cell_format( $active_excel_sheet, $columnLetter . $rowNumber, $key . '.' . $column_index );
 

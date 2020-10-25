@@ -55,6 +55,13 @@ class ExcelSheet {
 	public function getNumRows() {
 		return count( $this->data );
 	}
+
+	public static function get_letter_from_number( $n ) {
+		for($r = ""; $n >= 0; $n = intval($n / 26) - 1)
+			$r = chr($n%26 + 0x41) . $r;
+		return $r;
+	}
+
 	/**
 	 * Gets the last column letter for the given data
 	 */
