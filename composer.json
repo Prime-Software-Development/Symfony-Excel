@@ -1,0 +1,22 @@
+{
+  "name": "primesoftwaredevelopment/symfony-excel",
+  "type": "library",
+  "license": "proprietary",
+  "description": "Prime Software Development Excel Library",
+  "homepage": "http://www.primesoftwaredevelopment.co.uk/",
+  "authors": [
+	{
+	  "name": "Chris Weller",
+	  "email": "chris@primesoftwaredevelopment.co.uk"
+	}
+  ],
+  "require": {
+	"php": ">=7",
+	"phpoffice/phpspreadsheet": "1.*"
+  },
+  "autoload": {
+	"classmap": [
+	  "/src/"
+	]
+  }
+}
